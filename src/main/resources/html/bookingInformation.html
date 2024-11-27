@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .info {
+            margin: 10px 0;
+        }
+        .info strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Booking Confirmation</h1>
+
+    <div class="info">
+        <strong>Booking Code:</strong> <span id="bookingCode"></span>
+    </div>
+    <div class="info">
+        <strong>Guest Name:</strong> <span id="guestName"></span>
+    </div>
+    <div class="info">
+        <strong>Contact:</strong> <span id="contact"></span>
+    </div>
+    <div class="info">
+        <strong>Email:</strong> <span id="email"></span>
+    </div>
+    <div class="info">
+        <strong>Hotel Name:</strong> <span id="hotelName"></span>
+    </div>
+    <div class="info">
+        <strong>Room Type:</strong> <span id="roomType"></span>
+    </div>
+    <div class="info">
+        <strong>Check-In:</strong> <span id="checkIn"></span>
+    </div>
+    <div class="info">
+        <strong>Check-Out:</strong> <span id="checkOut"></span>
+    </div>
+    <div class="info">
+        <strong>No. of Rooms:</strong> <span id="noOfRooms"></span>
+    </div>
+    <div class="info">
+        <strong>No. of Guests:</strong> <span id="noOfAdults"></span>
+    </div>
+    <div class="info">
+        <strong>No. of Guests:</strong> <span id="noOfChild"></span>
+    </div>
+    <div class="info">
+        <strong>Location:</strong> <span id="location"></span>
+    </div>
+    <div class="info">
+        <strong>Room Price:</strong> <span id="roomPrice"></span>
+    </div>
+    <div class="info">
+        <strong>SGST (2.5%):</strong> <span id="sgst"></span>
+    </div>
+    <div class="info">
+        <strong>CGST (2.5%):</strong> <span id="cgst"></span>
+    </div>
+    <div class="info">
+        <strong>Total Price:</strong> <span id="totalPrice"></span>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+
+    document.getElementById('bookingCode').textContent = urlParams.get('bookingCode');
+    document.getElementById('guestName').textContent = urlParams.get('guestName');
+    document.getElementById('contact').textContent = urlParams.get('contact');
+    document.getElementById('email').textContent = urlParams.get('email');
+    document.getElementById('hotelName').textContent = urlParams.get('hotelName');
+    document.getElementById('roomType').textContent = urlParams.get('roomType');
+    document.getElementById('checkIn').textContent = urlParams.get('checkIn');
+    document.getElementById('checkOut').textContent = urlParams.get('checkOut');
+    document.getElementById('noOfRooms').textContent = urlParams.get('noOfRooms');
+    document.getElementById('noOfAdults').textContent = urlParams.get('noOfAdults');
+    document.getElementById('noOfChild').textContent = urlParams.get('noOfChild');
+    document.getElementById('location').textContent = urlParams.get('location');
+    document.getElementById('roomPrice').textContent = urlParams.get('roomPrice');
+    document.getElementById('sgst').textContent = urlParams.get('sgst');
+    document.getElementById('cgst').textContent = urlParams.get('cgst');
+    document.getElementById('totalPrice').textContent = urlParams.get('totalPrice');
+</script>
+
+
+
+</body>
+</html>
