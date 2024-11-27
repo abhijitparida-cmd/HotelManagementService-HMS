@@ -108,6 +108,32 @@ public class BookingService {
         }
     }
 
+    public static String[] formatBookingDates(BookingDto bookingDto) {
+        // Define the desired date format
+        SimpleDateFormat desiredFormat = new SimpleDateFormat("EEE MMM dd,yyyy hh:mma");
+
+        // Adjust check-in time to 02:00 PM
+        Calendar checkInCalendar = Calendar.getInstance();
+        checkInCalendar.setTime(bookingDto.getCheckIn());
+        checkInCalendar.set(Calendar.HOUR_OF_DAY, 14); // 2 PM in 24-hour format
+        checkInCalendar.set(Calendar.MINUTE, 0);
+        Date adjustedCheckIn = checkInCalendar.getTime();
+
+        // Adjust check-out time to 11:00 AM
+        Calendar checkOutCalendar = Calendar.getInstance();
+        checkOutCalendar.setTime(bookingDto.getCheckOut());
+        checkOutCalendar.set(Calendar.HOUR_OF_DAY, 11); // 11 AM in 24-hour format
+        checkOutCalendar.set(Calendar.MINUTE, 0);
+        Date adjustedCheckOut = checkOutCalendar.getTime();
+
+        // Format the adjusted check-in and check-out times
+        String formattedCheckIn = desiredFormat.format(adjustedCheckIn);
+        String formattedCheckOut = desiredFormat.format(adjustedCheckOut);
+
+        // Return the formatted dates as an array
+        return new String[]{formattedCheckIn, formattedCheckOut};
+    }
+
     // --------------------- Room Availability Check ---------------------- //
 
     public boolean RoomsAvailableCheck(Long propertyId, BookingDto bookingDto) {
@@ -224,19 +250,7 @@ public class BookingService {
         PropertyDto propertyDto = propertiesService.convertEntityToDto(property);
         AppUserDto appUserDto = appUserService.mapToDto(appUserId);
 
-        SimpleDateFormat desiredFormat = new SimpleDateFormat("EEE MMM dd, yyyy hh:mm a");
-
-        Calendar checkInCalendar = Calendar.getInstance();
-        checkInCalendar.setTime(bookingDto.getCheckIn());
-        checkInCalendar.set(Calendar.HOUR_OF_DAY, 14); // 2 PM in 24-hour format
-        checkInCalendar.set(Calendar.MINUTE, 0);
-        Date adjustedCheckIn = checkInCalendar.getTime();
-
-        Calendar checkOutCalendar = Calendar.getInstance();
-        checkOutCalendar.setTime(bookingDto.getCheckOut());
-        checkOutCalendar.set(Calendar.HOUR_OF_DAY, 11); // 11 AM in 24-hour format
-        checkOutCalendar.set(Calendar.MINUTE, 0);
-        Date adjustedCheckOut = checkOutCalendar.getTime();
+        String[] formattedDates = formatBookingDates(bookingDto);
 
         String customer = appUserDto.getName();
         String email = appUserDto.getEmail();
@@ -246,8 +260,8 @@ public class BookingService {
         String child = bookingDto.getNoOfChildren();
         String room = bookingDto.getNoOfRooms();
         String roomType = propertyDto.getRoomTypes();
-        String formattedCheckIn = desiredFormat.format(adjustedCheckIn);
-        String formattedCheckOut = desiredFormat.format(adjustedCheckOut);
+        String formattedCheckIn = formattedDates[0];
+        String formattedCheckOut = formattedDates[1];
         BigDecimal price = getTotalPrice(bookingDto, propertyId);
         price = price.setScale (2, RoundingMode.HALF_UP);
 

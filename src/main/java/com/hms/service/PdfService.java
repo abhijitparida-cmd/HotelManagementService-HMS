@@ -149,29 +149,12 @@ public class PdfService {
             table.addCell(createCellWithBgColor("Rooms:", paragraphFont));
             table.addCell(createCell(bookingDto.getNoOfRooms(), paragraphFont));
 
-            SimpleDateFormat desiredFormat = new SimpleDateFormat("EEE MMM dd,yyyy hh:mma");
-
-            // Adjust check-in time to 02:00 PM
-            Calendar checkInCalendar = Calendar.getInstance();
-            checkInCalendar.setTime(bookingDto.getCheckIn());
-            checkInCalendar.set(Calendar.HOUR_OF_DAY, 14); // 2 PM in 24-hour format
-            checkInCalendar.set(Calendar.MINUTE, 0);
-            Date adjustedCheckIn = checkInCalendar.getTime();
-
-            // Adjust check-out time to 11:00 AM
-            Calendar checkOutCalendar = Calendar.getInstance();
-            checkOutCalendar.setTime(bookingDto.getCheckOut());
-            checkOutCalendar.set(Calendar.HOUR_OF_DAY, 11); // 11 AM in 24-hour format
-            checkOutCalendar.set(Calendar.MINUTE, 0);
-            Date adjustedCheckOut = checkOutCalendar.getTime();
-
-            String formattedCheckIn = desiredFormat.format(adjustedCheckIn);
-            String formattedCheckOut = desiredFormat.format(adjustedCheckOut);
+            String[] formattedDates = BookingService.formatBookingDates(bookingDto);
 
             table.addCell(createCellWithBgColor("CheckIn Date:", paragraphFont));
-            table.addCell(createCell(formattedCheckIn, paragraphFont));
+            table.addCell(createCell(formattedDates[0], paragraphFont));
             table.addCell(createCellWithBgColor("CheckOut Date:", paragraphFont));
-            table.addCell(createCell(formattedCheckOut, paragraphFont));
+            table.addCell(createCell(formattedDates[1], paragraphFont));
 
             // Header for Price Details
             headerCell = new PdfPCell(new Phrase("Price Details", headerFont));
@@ -219,6 +202,8 @@ public class PdfService {
         // Constructing the base URL
         String baseUrl = "https://httpbin.org/get?";
 
+        String[] formattedDates = BookingService.formatBookingDates(bookingDto);
+
         // Encoding the booking information as query parameters
         String url = baseUrl + "bookingCode=" + encodeURIComponent(bookingDto.getBookingCode()) +
                 "&guestName=" + encodeURIComponent(appUserDto.getName()) +
@@ -226,8 +211,8 @@ public class PdfService {
                 "&email=" + encodeURIComponent(appUserDto.getEmail()) +
                 "&hotelName=" + encodeURIComponent(propertyDto.getHotelName()) +
                 "&roomType=" + encodeURIComponent(propertyDto.getRoomTypes()) +
-                "&checkIn=" + encodeURIComponent(formatDate(bookingDto.getCheckIn())) +
-                "&checkOut=" + encodeURIComponent(formatDate(bookingDto.getCheckOut())) +
+                "&checkIn=" + encodeURIComponent(formattedDates[0]) +
+                "&checkOut=" + encodeURIComponent(formattedDates[1]) +
                 "&noOfRooms=" + encodeURIComponent(String.valueOf(bookingDto.getNoOfRooms())) +
                 "&noOfAdults=" + encodeURIComponent(String.valueOf(bookingDto.getNoOfAdults())) +
                 "&noOfChild=" + encodeURIComponent(String.valueOf(bookingDto.getNoOfChildren())) +
