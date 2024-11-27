@@ -10,7 +10,5 @@ import java.util.Optional;
 
 public interface BookingsRepository extends JpaRepository<Bookings, Long> {
 
-    Optional<Bookings> findByBookingDate(Date bookingDate);
-
-    Optional<Bookings> findByAppUserIdAndPropertyId(AppUser appUser, Property property);
+    Optional<Bookings> findByBookingCode(String bookingCode);
 }

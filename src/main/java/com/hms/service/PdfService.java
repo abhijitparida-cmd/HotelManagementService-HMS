@@ -1,8 +1,11 @@
 package com.hms.service;
 
+import com.hms.entity.*;
 import com.hms.payload.AppUserDto;
 import com.hms.payload.BookingDto;
 import com.hms.payload.PropertyDto;
+import com.hms.repository.PriceRepository;
+import com.hms.repository.PropertyRepository;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.BarcodeQRCode;
 import com.itextpdf.text.pdf.PdfPCell;
@@ -15,20 +18,27 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
+import java.util.Optional;
 
 @Service
 public class PdfService {
 
+    private final PropertiesService propertiesService;
+
+    public PdfService(PropertiesService propertiesService) {
+        this.propertiesService = propertiesService;
+    }
+
     public void generatePdf(String filePath, PropertyDto propertyDto, AppUserDto appUserDto,
-                            BookingDto bookingDto, BigDecimal totalPrice) throws IOException {
+                            BookingDto bookingDto, BigDecimal totalPrice, Bookings bookings) throws IOException {
         try {
+            // Initialize document
             Document document = new Document();
             PdfWriter.getInstance(document, new FileOutputStream(filePath));
             document.open();
 
-            // logo
+            // Logo
             Image logo = Image.getInstance("D:\\FILES\\HMS_Project_Files\\Stay_Easy.png");
             logo.scaleToFit(80, 80);
             logo.setAlignment(Element.ALIGN_LEFT);
@@ -42,11 +52,33 @@ public class PdfService {
             qrCodeImage.scaleToFit(100, 100);
             qrCodeImage.setAlignment(Element.ALIGN_RIGHT);
 
-            // Table for header layout (Logo on left, QR Code on right)
-            PdfPTable headerTable = new PdfPTable(2);
+            // Fonts
+            Font titleFont1 = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, BaseColor.BLACK);
+            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, BaseColor.RED);
+
+            // Title1 and Title
+            Paragraph title1 = new Paragraph("STAY EASY", titleFont1);
+            title1.setAlignment(Element.ALIGN_CENTER);
+
+            Paragraph title = new Paragraph("Booking Confirmation", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+
+            // Nested Table for Titles
+            PdfPTable titleTable = new PdfPTable(1);
+            titleTable.setWidthPercentage(100);
+            PdfPCell titleCell = new PdfPCell();
+            titleCell.addElement(title1);
+            titleCell.addElement(title);
+            titleCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            titleCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            titleCell.setBorder(Rectangle.NO_BORDER);
+            titleTable.addCell(titleCell);
+
+            // Main Table for Header Layout
+            PdfPTable headerTable = new PdfPTable(3);
             headerTable.setWidthPercentage(100);
-            float[] columnWidths1 = {1, 1};
-            headerTable.setWidths(columnWidths1);
+            float[] columnWidths = {1, 2, 1}; // Logo, Titles, QR Code
+            headerTable.setWidths(columnWidths);
 
             // Add Logo to header
             PdfPCell logoCell = new PdfPCell(logo);
@@ -54,6 +86,13 @@ public class PdfService {
             logoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
             logoCell.setHorizontalAlignment(Element.ALIGN_LEFT);
             headerTable.addCell(logoCell);
+
+            // Add Titles to header
+            PdfPCell titleTableCell = new PdfPCell(titleTable);
+            titleTableCell.setBorder(Rectangle.NO_BORDER);
+            titleTableCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            titleTableCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            headerTable.addCell(titleTableCell);
 
             // Add QR Code to header
             PdfPCell qrCodeCell = new PdfPCell(qrCodeImage);
@@ -64,19 +103,12 @@ public class PdfService {
 
             document.add(headerTable);
 
-            // Title1
-            Font titleFont1 = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, BaseColor.BLACK);
-            Paragraph title1 = new Paragraph("STAY EASY", titleFont1);
-            title1.setAlignment(Element.ALIGN_CENTER);
-            title1.setSpacingAfter(10);
-            document.add(title1);
-
-            // Title
-            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, BaseColor.RED);
-            Paragraph title = new Paragraph("Booking Confirmation", titleFont);
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(20);
-            document.add(title);
+            // Introductory paragraph
+            Font codeParagraph = FontFactory.getFont(FontFactory.HELVETICA, 12, BaseColor.BLACK);
+            Paragraph paragraph1 = new Paragraph("Booking ID: '"+bookings.getBookingCode()+"'", codeParagraph);
+            paragraph1.setAlignment(Element.ALIGN_CENTER);
+            paragraph1.setSpacingAfter(10);
+            document.add(paragraph1);
 
             // Introductory paragraph
             Font paragraphFont = FontFactory.getFont(FontFactory.HELVETICA, 10, BaseColor.DARK_GRAY);
@@ -94,15 +126,15 @@ public class PdfService {
             table.setWidths(columnWidths2);
 
             // Header style
-            Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.WHITE);
+            Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, BaseColor.WHITE);
             PdfPCell headerCell;
 
             // Customer Information
-            headerCell = new PdfPCell(new Phrase("Customer Information", headerFont));
+            headerCell = new PdfPCell(new Phrase("CUSTOMER INFORMATION", headerFont));
             headerCell.setBackgroundColor(new BaseColor(66, 74, 119));
             headerCell.setColspan(4);
             headerCell.setHorizontalAlignment(Element.ALIGN_LEFT);
-            headerCell.setPadding(8);
+            headerCell.setPadding(6);
             table.addCell(headerCell);
 
             // Customer Details
@@ -117,11 +149,11 @@ public class PdfService {
             table.addCell(createCell(appUserDto.getEmail(), paragraphFont));
 
             // Hotel Information
-            headerCell = new PdfPCell(new Phrase("Hotel Details", headerFont));
+            headerCell = new PdfPCell(new Phrase("HOTEL DETAILS", headerFont));
             headerCell.setBackgroundColor(new BaseColor(66, 74, 119));
             headerCell.setColspan(4);
             headerCell.setHorizontalAlignment(Element.ALIGN_LEFT);
-            headerCell.setPadding(8);
+            headerCell.setPadding(6);
             table.addCell(headerCell);
 
             // Hotel Details
@@ -129,18 +161,18 @@ public class PdfService {
             table.addCell(createCell(propertyDto.getHotelName(), paragraphFont));
             table.addCell(createCellWithBgColor("Room Type:", paragraphFont));
             table.addCell(createCell(propertyDto.getRoomTypes(), paragraphFont));
-            table.addCell(createCellWithBgColor("Room Price:", paragraphFont));
+            table.addCell(createCellWithBgColor("Room Price (Per-Night):", paragraphFont));
             table.addCell(createCell(String.valueOf(propertyDto.getPriceOfRooms()), paragraphFont));
             table.addCell(createCellWithBgColor("Location:", paragraphFont));
             table.addCell(createCell(propertyDto.getLocationName() + ", " + propertyDto.getCityName() + ", " +
                     propertyDto.getStateName() + ", " + propertyDto.getCountryName() + ", " + propertyDto.getPinCode(), paragraphFont));
 
             // Booking Information
-            headerCell = new PdfPCell(new Phrase("Booking Details", headerFont));
+            headerCell = new PdfPCell(new Phrase("BOOKING DETAILS", headerFont));
             headerCell.setBackgroundColor(new BaseColor(66, 74, 119));
             headerCell.setColspan(4);
             headerCell.setHorizontalAlignment(Element.ALIGN_LEFT);
-            headerCell.setPadding(8);
+            headerCell.setPadding(6);
             table.addCell(headerCell);
 
             // Booking Details
@@ -157,15 +189,16 @@ public class PdfService {
             table.addCell(createCell(formattedDates[1], paragraphFont));
 
             // Header for Price Details
-            headerCell = new PdfPCell(new Phrase("Price Details", headerFont));
+            headerCell = new PdfPCell(new Phrase("PRICE DETAILS", headerFont));
             headerCell.setBackgroundColor(new BaseColor(66, 74, 119));
             headerCell.setColspan(4);
             headerCell.setHorizontalAlignment(Element.ALIGN_LEFT);
-            headerCell.setPadding(8);
+            headerCell.setPadding(6);
             table.addCell(headerCell);
 
             // Add Price Details Rows
-            BigDecimal roomPrice = propertyDto.getPriceOfRooms();
+            BigDecimal basePriceForRooms = BookingService.getBasePriceRoom(bookingDto,propertyDto.getPriceOfRooms());
+
             BigDecimal CgstTax = totalPrice.multiply(BigDecimal.valueOf(0.025)); // 2.5% CGST
             BigDecimal sgstTax = totalPrice.multiply(BigDecimal.valueOf(0.025)); // 2.5% SGST
 
@@ -174,8 +207,8 @@ public class PdfService {
             sgstTax = sgstTax.setScale(2, RoundingMode.HALF_UP);
             totalPrice = totalPrice.setScale(2, RoundingMode.HALF_UP);
 
-            table.addCell(createCellWithBgColor("Room Price(per Night):", paragraphFont));
-            table.addCell(createCell(roomPrice.toString(), paragraphFont));
+            table.addCell(createCellWithBgColor("Room Price:", paragraphFont));
+            table.addCell(createCell(basePriceForRooms.toString(), paragraphFont));
             table.addCell(createCellWithBgColor("SGST(2.5%):", paragraphFont));
             table.addCell(createCell(sgstTax.toString(), paragraphFont));
             table.addCell(createCellWithBgColor("CGST(2.5%):", paragraphFont));

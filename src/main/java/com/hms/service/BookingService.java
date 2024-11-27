@@ -165,36 +165,28 @@ public class BookingService {
 
     // ------------------- SetTotalPrice ------------------ //
 
-    public BigDecimal getTotalPrice(BookingDto bookingDto, Long propertyId) {
-        // Tax
-        BigDecimal taxes = BigDecimal.valueOf(2.5).divide(BigDecimal.valueOf(100));
+    public static BigDecimal getBasePriceRoom(BookingDto bookingDto, BigDecimal roomPrice) {
+        long times = bookingDto.getCheckOut().getTime() - bookingDto.getCheckIn().getTime();
+        long numberOfNights = times / (1000 * 60 * 60 * 24);
+        long noOfRooms = Long.parseLong(bookingDto.getNoOfRooms());
+        return roomPrice.multiply(BigDecimal.valueOf(noOfRooms)).multiply(BigDecimal.valueOf(numberOfNights));
+    }
 
-        // Property and room details
+    public BigDecimal getTotalPrice(BookingDto bookingDto, Long propertyId) {
         Property property = propertyRepository.findById(propertyId).orElseThrow(() ->
                 new IllegalArgumentException("Property not found"));
-        Room room = property.getRoomId();
-        Hotels hotel = property.getHotelId();
 
-        // Room price
-        Price roomPrice = priceRepository.findByRoomIdAndHotelId(room, hotel)
+        Price roomPrice = priceRepository.findByRoomIdAndHotelId(property.getRoomId(), property.getHotelId())
                 .orElseThrow(() -> new IllegalArgumentException("Price not found"));
-        BigDecimal roomRate = roomPrice.getPriceOfRooms();
 
-        // Calculate number of nights excluding the checkout
         long numberOfNights = getNumberOfNightsExcludingCheckout(bookingDto.getCheckIn(), bookingDto.getCheckOut());
-
-        // Number of rooms
         long noOfRooms = Long.parseLong(bookingDto.getNoOfRooms());
 
-        // price: room rate * number of rooms * number of nights
-        BigDecimal basePriceForRooms = roomRate.multiply(BigDecimal.valueOf(noOfRooms))
+        BigDecimal basePriceForRooms = roomPrice.getPriceOfRooms().multiply(BigDecimal.valueOf(noOfRooms))
                 .multiply(BigDecimal.valueOf(numberOfNights));
 
-        // Calculate taxes
-        BigDecimal cgstAmount = basePriceForRooms.multiply(taxes);
-        BigDecimal sgstAmount = basePriceForRooms.multiply(taxes);
-
-        // Total price including taxes
+        BigDecimal cgstAmount = basePriceForRooms.multiply(BigDecimal.valueOf(2.5).divide(BigDecimal.valueOf(100)));
+        BigDecimal sgstAmount = cgstAmount;
         return basePriceForRooms.add(cgstAmount).add(sgstAmount);
     }
 
@@ -225,26 +217,26 @@ public class BookingService {
         }
 
         Bookings bookings = bookingsRepository.save(convertDtoToEntity(bookingDto, propertyId, appUserId));
-        generateBookingConfirmationPdf(propertyId, appUserId, bookingDto);
+        generateBookingConfirmationPdf(propertyId, appUserId, bookingDto, bookings);
         updateRoomAvailability(propertyId, bookingDto.getCheckIn(), bookingDto.getCheckOut(), noOfRooms);
         return convertEntityToDto(bookings);
     }
 
     // -------------------- PdfGenerate -------------------- //
 
-    public void generateBookingConfirmationPdf(Long propertyId, AppUser appUserId, BookingDto bookingDto) throws IOException{
+    public void generateBookingConfirmationPdf(Long propertyId, AppUser appUserId, BookingDto bookingDto, Bookings bookings) throws IOException{
         Property property = propertyRepository.findById(propertyId).get();
         PropertyDto propertyDto = propertiesService.convertEntityToDto(property);
         AppUserDto appUserDto = appUserService.mapToDto(appUserId);
         BigDecimal totalPrice = getTotalPrice(bookingDto, propertyId);
         String filePath = "D:\\FILES\\HMS_Project_Files\\Booking_Details\\Booking_Conformation" + "_" + Instant.now().toEpochMilli() + ".pdf";
-        pdfService.generatePdf(filePath, propertyDto, appUserDto, bookingDto, totalPrice);
-        SmsService(propertyId, appUserId, bookingDto);
+        pdfService.generatePdf(filePath, propertyDto, appUserDto, bookingDto, totalPrice, bookings);
+        SmsService(propertyId, appUserId, bookingDto, bookings);
     }
 
     // --------------------- Send SMS ---------------------- //
 
-    private void SmsService(Long propertyId, AppUser appUserId, BookingDto bookingDto){
+    private void SmsService(Long propertyId, AppUser appUserId, BookingDto bookingDto, Bookings bookings) {
         Property property = propertyRepository.findById(propertyId).orElseThrow(
                 () -> new IllegalArgumentException("Property not found"));
         PropertyDto propertyDto = propertiesService.convertEntityToDto(property);
@@ -252,6 +244,7 @@ public class BookingService {
 
         String[] formattedDates = formatBookingDates(bookingDto);
 
+        String code = bookings.getBookingCode();
         String customer = appUserDto.getName();
         String email = appUserDto.getEmail();
         String phoneNumber = appUserDto.getMobileNum();
@@ -267,7 +260,7 @@ public class BookingService {
 
         // SMS body
         String message = String.format(
-                "Your booking is confirmed! Here are your booking details:\n" +
+                "Your booking is confirmed,Your booking ID is: '"+code+"' ! Here are your booking details:\n" +
                         "Customer: %s\n" +
                         "Email: %s\n" +
                         "Mobile: %s\n"+
