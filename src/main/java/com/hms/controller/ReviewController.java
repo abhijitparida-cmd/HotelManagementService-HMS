@@ -34,9 +34,14 @@ public class ReviewController {
 
     // ------------------------ Read ------------------------ //
 
-    @GetMapping("/get-reviews")
+    @GetMapping("/get-reviews-id")
     public ResponseEntity<List<ReviewDto>> getAllReviews(@AuthenticationPrincipal AppUser appUserId) {
-        return new ResponseEntity<>(reviewService.getAllReviews(appUserId), HttpStatus.OK);
+        return new ResponseEntity<>(reviewService.getAllReviewsByUser(appUserId), HttpStatus.OK);
+    }
+
+    @GetMapping("/get-all-review")
+    public ResponseEntity<List<ReviewDto>> getAllReviews() {
+        return new ResponseEntity<>(reviewService.getAllReviews(), HttpStatus.OK);
     }
 
     // ----------------------- Update ----------------------- //

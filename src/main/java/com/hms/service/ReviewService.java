@@ -67,8 +67,14 @@ public class ReviewService {
 
     // ------------------------ Read ------------------------ //
 
-    public List<ReviewDto> getAllReviews(AppUser appUserId) {
+    public List<ReviewDto> getAllReviewsByUser(AppUser appUserId) {
         return reviewRepository.findByAppUserId(appUserId).stream()
+                .map(this::convertEntityToDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<ReviewDto> getAllReviews() {
+        return reviewRepository.findAll().stream()
                 .map(this::convertEntityToDto)
                 .collect(Collectors.toList());
     }

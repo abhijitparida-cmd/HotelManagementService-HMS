@@ -29,6 +29,7 @@ public class BookingService {
     private final PriceRepository priceRepository;
     private final AppUserService appUserService;
     private final TwilioService twilioService;
+    private final EmailService emailService;
     private final PdfService pdfService;
 
     // ------------------- Constructor ------------------- //
@@ -41,6 +42,7 @@ public class BookingService {
             PriceRepository priceRepository,
             AppUserService appUserService,
             TwilioService twilioService,
+            EmailService emailService,
             PdfService pdfService) {
         this.roomAvailabilityRepository = roomAvailabilityRepository;
         this.propertyRepository = propertyRepository;
@@ -49,6 +51,7 @@ public class BookingService {
         this.priceRepository = priceRepository;
         this.appUserService = appUserService;
         this.twilioService = twilioService;
+        this.emailService = emailService;
         this.pdfService = pdfService;
     }
 
@@ -231,12 +234,21 @@ public class BookingService {
         BigDecimal totalPrice = getTotalPrice(bookingDto, propertyId);
         String filePath = "D:\\FILES\\HMS_Project_Files\\Booking_Details\\Booking_Conformation" + "_" + Instant.now().toEpochMilli() + ".pdf";
         pdfService.generatePdf(filePath, propertyDto, appUserDto, bookingDto, totalPrice, bookings);
-        SmsService(propertyId, appUserId, bookingDto, bookings);
+        String message = SmsService(propertyId, appUserId, bookingDto, bookings);
+
+        twilioService.sendBookingConfirmationSms(message);
+        twilioService.sendBookingConfirmationWhatsAppMessage(message);
+
+        String toEmail = appUserId.getEmail();
+        String subject = "Booking Confirmation";
+        String body = "Dear " + appUserId.getName() + ", Your booking ID is: '"+bookings.getBookingCode()+"'," +
+                "\n\nThank you for your booking" + ". Please find your booking confirmation attached.\n\nRegards,\nHMS Team";
+        emailService.sendEmailWithPdf(toEmail, subject, body, filePath);
     }
 
     // --------------------- Send SMS ---------------------- //
 
-    private void SmsService(Long propertyId, AppUser appUserId, BookingDto bookingDto, Bookings bookings) {
+    private String SmsService(Long propertyId, AppUser appUserId, BookingDto bookingDto, Bookings bookings) {
         Property property = propertyRepository.findById(propertyId).orElseThrow(
                 () -> new IllegalArgumentException("Property not found"));
         PropertyDto propertyDto = propertiesService.convertEntityToDto(property);
@@ -259,7 +271,7 @@ public class BookingService {
         price = price.setScale (2, RoundingMode.HALF_UP);
 
         // SMS body
-        String message = String.format(
+        return String.format(
                 "Your booking is confirmed,Your booking ID is: '"+code+"' ! Here are your booking details:\n" +
                         "Customer: %s\n" +
                         "Email: %s\n" +
@@ -274,9 +286,6 @@ public class BookingService {
                         "Total-Price: %s",
                 customer,email,phoneNumber,hotelName,adults,child,room,
                 roomType,formattedCheckIn, formattedCheckOut,price);
-
-        twilioService.sendBookingConfirmationSms(message);
-        twilioService.sendBookingConfirmationWhatsAppMessage(message);
     }
 
     // ------------- Update Room Availability -------------- //
