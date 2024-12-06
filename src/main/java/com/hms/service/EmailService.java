@@ -9,6 +9,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.util.Objects;
 
 @Service
 public class EmailService {
@@ -34,12 +35,9 @@ public class EmailService {
 
             // Attach the PDF file
             FileSystemResource file = new FileSystemResource(new File(pdfFilePath));
-            helper.addAttachment(file.getFilename(), file);
-
+            helper.addAttachment(Objects.requireNonNull(file.getFilename()), file);
             mailSender.send(message);
-            System.out.println("Email sent successfully with PDF attachment.");
         } catch (MessagingException e) {
-            System.err.println("Error sending email with attachment: " + e.getMessage());
             throw new RuntimeException("Failed to send email with PDF attachment", e);
         }
     }

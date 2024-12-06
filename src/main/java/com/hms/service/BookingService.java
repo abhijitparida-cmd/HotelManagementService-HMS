@@ -236,8 +236,8 @@ public class BookingService {
         pdfService.generatePdf(filePath, propertyDto, appUserDto, bookingDto, totalPrice, bookings);
         String message = SmsService(propertyId, appUserId, bookingDto, bookings);
 
-        twilioService.sendBookingConfirmationSms(message);
-        twilioService.sendBookingConfirmationWhatsAppMessage(message);
+        twilioService.sendBookingConfirmationSms(message,appUserDto.getMobileNum());
+        twilioService.sendBookingConfirmationWhatsAppMessage(message,appUserDto.getMobileNum());
 
         String toEmail = appUserId.getEmail();
         String subject = "Booking Confirmation";

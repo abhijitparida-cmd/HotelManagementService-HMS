@@ -15,9 +15,6 @@ public class TwilioService {
     @Value("${twilio.from-phone-number}")
     private String fromPhoneNumber;
 
-    @Value("${twilio.to-phone-number}")
-    private String toPhoneNumber;
-
     @Value("${twilio.whatsapp-sender}")
     private String whatsappSender;
 
@@ -26,14 +23,20 @@ public class TwilioService {
     }
 
 
-    public void sendBookingConfirmationSms(String messageBody) {
+    public void sendBookingConfirmationSms(String messageBody,String toPhoneNumber) {
+        if (!toPhoneNumber.startsWith("+91")) {
+            toPhoneNumber = "+91" + toPhoneNumber;
+        }
         Message.creator(new PhoneNumber(toPhoneNumber),
                 new PhoneNumber(fromPhoneNumber),
                 messageBody)
                 .create();
     }
 
-    public void sendBookingConfirmationWhatsAppMessage(String messageBody) {
+    public void sendBookingConfirmationWhatsAppMessage(String messageBody,String toPhoneNumber) {
+        if (!toPhoneNumber.startsWith("+91")) {
+            toPhoneNumber = "+91" + toPhoneNumber;
+        }
         Message.creator(new PhoneNumber("whatsapp:" + toPhoneNumber),
                 new PhoneNumber(whatsappSender)
                 , messageBody)
